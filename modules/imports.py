@@ -11,3 +11,8 @@ from collections import Counter
 # import geopandas as gpd #requires install via conda/pip
 # import geoplot as glt #requires install via conda/pip
 # from shapely.geometry import Point, polygon
+from sklearn.preprocessing import OrdinalEncoder
+
+from sklearn.svm import SVR
+from collections import Counter
+from sklearn.model_selection import train_test_split

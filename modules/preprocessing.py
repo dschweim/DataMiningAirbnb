@@ -1,27 +1,31 @@
 import numpy as np
 import pandas as pd
 import warnings
+warnings.filterwarnings("ignore")
 
+from datetime import datetime
 from sklearn import preprocessing
 
-# Ignore all warnings
-warnings.filterwarnings("ignore")
+
+# Summarising function
+def load_and_preprocess_dataset():
+    df = load_dataset()
+    preprocessed_df = preprocess_dataset(df)
+    return preprocessed_df
 
 
 # Load the dataset containing airbnb listings in munich
 def load_dataset():
-    # Load dataset
     df = pd.read_csv('data/listings_Munich_July.csv')
-    print("Dataset loaded successfully.")
+
+    # Update user about the successful loading
+    print(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), ": Dataset loaded successfully.")
     return df
 
 
-# Preprocess the dataset
-def load_and_preprocess_dataset():
-    # Load dataset
-    df = load_dataset()
-
-    # Select only the relevant features
+# Preprocess the dataset containing airbnb listings in munich
+def preprocess_dataset(df):
+    # Select the relevant features
     df = df.loc[:, df.columns.intersection(['accommodates',
                                             'amenities',
                                             'bathrooms',
@@ -36,75 +40,21 @@ def load_and_preprocess_dataset():
                                             'property_type',
                                             'room_type',
                                             'price'])]
-    print("- Dropped all irrelevant features.")
 
-    # Preprocess the price.
+    # Preprocess the individual features
     df = preprocess_price(df)
+    df = preprocess_bathrooms(df)
+    df = preprocess_bed_type(df)
+    df = preprocess_neighbourhood(df)
+    df = preprocess_property_type(df)
+    df = preprocess_room_type(df)
+    df = delete_outliers(df)
 
-    # One-hot encoding for neighbourhoods
+    # Drop irrelevant features
+    df = df.drop(columns=['neighbourhood_cleansed', 'amenities'])
 
-    # Get list of distinct values of neighbourhoods
-    neighbourhoods_selected = df.neighbourhood_cleansed.unique()
-
-    # Create dummy variables for the neighbourhoods
-    for element in neighbourhoods_selected:
-        df[element.lower()] = 0
-
-    # Set relevant values equal to 1
-    for row in df.itertuples():
-        for element in neighbourhoods_selected:
-            if element in row.neighbourhood_cleansed:
-                df.loc[row.Index, element.lower()] = 1
-
-    # replace zero bedrooms with one bedroom
-    df.loc[df.bedrooms == 0.0, 'bedrooms'] = 1.0
-
-    # ordinal encoding
-    # create replace map
-    replace_map = {'bed_type': {'Couch': 1, 'Futon': 1, 'Pull-out Sofa': 1, 'Airbed': 2, 'Real Bed': 3}}
-
-    # replace categorical values using replace map
-    df = df.replace(replace_map)
-
-    # replace blank entries with shared bathroom
-    df.loc[df.bathrooms == None, 'bathrooms'] = 0.5
-
-    # replace zero bathrooms with shared bathroom
-    df.loc[df.bathrooms == 0.0, 'bathrooms'] = 0.5
-
-    # Note: There are no missing values for both property_type and room_type. The formal check will added to the code later on anyway.
-    from sklearn.preprocessing import OrdinalEncoder
-
-    # Alternative 1: Label encoding of property type
-    label_encoder = preprocessing.LabelEncoder()
-    df['property_type'] = label_encoder.fit_transform(df['property_type'])
-
-    # Alternative 2: Ordinal encoding of property type
-    # ordinal_encoder = OrdinalEncoder()
-    # order = ordinal_encoder.fit_transform(munich[['property_type', 'price']].groupby('property_type').mean())
-    # property_types = munich['property_type'].unique()
-    # for index, property_type in enumerate(property_types):
-    #     munich[munich.property_type == property_type].property_type = order[index][0]
-
-    # Note: There are no missing values for both property_type and room_type. The formal check will added to the code later on anyway.
-    from sklearn.preprocessing import OrdinalEncoder
-
-    # Alternative 1: Label encoding of room type
-    label_encoder = preprocessing.LabelEncoder()
-    df['room_type'] = label_encoder.fit_transform(df['room_type'])
-
-    # Alternative 2: Ordinal encoding of property type
-    # ordinal_encoder = OrdinalEncoder()
-    # order = ordinal_encoder.fit_transform(munich[['room_type', 'price']].groupby('room_type').mean())
-    # room_types = munich['room_type'].unique()
-    # for index, room_type in enumerate(room_types):
-    #     munich[munich.room_type == room_type].room_type = order[index][0]
-
-    # drop unused features
-    df = df.drop(columns=['neighbourhood_cleansed', 'property_type', 'room_type', 'price'])
-
-    delete_outlier(df)
-    print("Dataset preprocessed successfully.")
+    # Update user about the successful pre-processing
+    print(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), ": Dataset preprocessed successfully.")
     return df
 
 
@@ -129,8 +79,79 @@ def preprocess_price(df):
     return df
 
 
+# Preprocess the feature 'neighbourhood'
+def preprocess_neighbourhood(df):
+    # Get list of distinct values of neighbourhoods
+    neighbourhoods_selected = df.neighbourhood_cleansed.unique()
+
+    # Create dummy variables for the neighbourhoods
+    for element in neighbourhoods_selected:
+        df[element.lower()] = 0
+
+    # Set relevant values equal to 1
+    for row in df.itertuples():
+        for element in neighbourhoods_selected:
+            if element in row.neighbourhood_cleansed:
+                df.loc[row.Index, element.lower()] = 1
+
+    # replace zero bedrooms with one bedroom
+    df.loc[df.bedrooms == 0.0, 'bedrooms'] = 1.0
+
+    return df
+
+
+# Preprocess the feature 'property_type'
+def preprocess_property_type(df):
+    # Alternative 1: Label encoding of property type
+    label_encoder = preprocessing.LabelEncoder()
+    df['property_type'] = label_encoder.fit_transform(df['property_type'])
+
+    # Alternative 2: Ordinal encoding of property type
+    # ordinal_encoder = OrdinalEncoder()
+    # order = ordinal_encoder.fit_transform(munich[['property_type', 'price']].groupby('property_type').mean())
+    # property_types = munich['property_type'].unique()
+    # for index, property_type in enumerate(property_types):
+    #     munich[munich.property_type == property_type].property_type = order[index][0]
+    return df
+
+
+# Preprocess the feature 'room_type'
+def preprocess_room_type(df):
+    # Alternative 1: Label encoding of room type
+    label_encoder = preprocessing.LabelEncoder()
+    df['room_type'] = label_encoder.fit_transform(df['room_type'])
+
+    # Alternative 2: Ordinal encoding of property type
+    # ordinal_encoder = OrdinalEncoder()
+    # order = ordinal_encoder.fit_transform(munich[['room_type', 'price']].groupby('room_type').mean())
+    # room_types = munich['room_type'].unique()
+    # for index, room_type in enumerate(room_types):
+    #     munich[munich.room_type == room_type].room_type = order[index][0]
+    return df
+
+
+# Preprocess the feature 'bed_type'
+def preprocess_bed_type(df):
+    # create replace map
+    replace_map = {'bed_type': {'Couch': 1, 'Futon': 1, 'Pull-out Sofa': 1, 'Airbed': 2, 'Real Bed': 3}}
+
+    # replace categorical values using replace map
+    df = df.replace(replace_map)
+    return df
+
+
+# Preprocess the feature 'bathrooms'
+def preprocess_bathrooms(df):
+    # replace blank entries with shared bathroom
+    df.loc[df.bathrooms == None, 'bathrooms'] = 0.5
+
+    # replace zero bathrooms with shared bathroom
+    df.loc[df.bathrooms == 0.0, 'bathrooms'] = 0.5
+    return df
+
+
 # Outlier detection and deletion via standard deviation
-def delete_outlier(df):
+def delete_outliers(df):
     # Calculate mean and standard deviation
     price = df['max_price']
     price_mean = np.mean(price)
@@ -146,6 +167,7 @@ def delete_outlier(df):
     df = df.drop(outlier_indices)
     print("- ", str(len(outlier_indices)), " outliers deleted.")
     return df
+
 
 #def geodata():
 #    # read shapefile of Bavaria\n",
