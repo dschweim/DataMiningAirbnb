@@ -1,31 +1,35 @@
 import warnings
+from datetime import datetime
+
+import geopandas as gpd
 import numpy as np
 import pandas as pd
-
-warnings.filterwarnings("ignore")
-
-from datetime import datetime
+from shapely.geometry import Point
 from sklearn import preprocessing
 from sklearn.preprocessing import OrdinalEncoder
-import geopandas as gpd
-from shapely.geometry import Point
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+
+from modules.feature_selection import feature_selection
+from modules.feature_selection import univariate_selection
 
 
-def load_and_preprocess_dataset():
+def load_and_preprocess_dataset(number_of_features):
+    warnings.filterwarnings("ignore")
     df = load_dataset()
-    preprocessed_df = preprocess_dataset(df)
-    return preprocessed_df
+    preprocessed_features, preprocessed_label = preprocess_dataset(df, number_of_features)
+    print(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), ": Dataset loaded and preprocessed.")
+    return preprocessed_features, preprocessed_label
 
 
-# Load the dataset containing airbnb listings in munich
 def load_dataset():
     df = pd.read_csv('data/listings_Munich_July.csv')
-    print(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), ": Dataset loaded successfully.")
     return df
 
 
-# Preprocess the dataset containing airbnb listings in munich
-def preprocess_dataset(df):
+def preprocess_dataset(df, number_of_features):
+
+    # Select only the relevant features
     df = feature_selection(df)
     df = data_transformation(df)
     df = instance_selection(df)
@@ -34,47 +38,55 @@ def preprocess_dataset(df):
     df = data_cleaning(df)
     df = data_normalization(df)
 
+    # Restore indices
+    df = df.reset_index()
+    df = df.drop('index', 1)
 
-    print(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), ": Dataset preprocessed successfully.")
-    return df
 
 
-def feature_selection(df):
-    selected_features = df.loc[:, df.columns.intersection(['accommodates',
-                                            'amenities',
-                                            'bathrooms',
-                                            'bedrooms',
-                                            'beds',
-                                            'bed_type',
-                                            'extra_people',
-                                            'guests_included',
-                                            'latitude',
-                                            'longitude',
-                                            'neighbourhood_cleansed',
-                                            'property_type',
-                                            'room_type',
-                                            'price'])]
-    return selected_features
+    label = df['max_price']
+
+    # https://towardsdatascience.com/feature-selection-techniques-in-machine-learning-with-python-f24e7da3f36e
+    best_features = selected_best_features(df, number_of_features)
+    features = df[best_features]
+
+    return features, label
+
+
+def selected_best_features(df, number_of_features):
+    # Split features and labels
+    features = df.drop('max_price', 1)
+    labels = df['max_price']
+
+    # Select k best features using SelectKBest (k = 5)
+    best_features = SelectKBest(score_func=chi2, k=number_of_features)
+    fit = best_features.fit(features, labels)
+    dfscores = pd.DataFrame(fit.scores_)
+    dfcolumns = pd.DataFrame(features.columns)
+
+    # concat two dataframes for better visualization
+    featureScores = pd.concat([dfcolumns, dfscores], axis=1)
+    featureScores.columns = ['Specs', 'Score']
+    return featureScores['Specs']
 
 
 def instance_selection(df):
     # Delete commercial listings of property_type
-    property_types = df['property_type']
-    commercial_property_types = ['Boutique hotel', 'Hostel', 'Hotel', 'Aparthotel']
-    commercial_indices = []
-    for index, value in property_types.iteritems():
-        if value in commercial_property_types:
-            commercial_indices.append(index)
-    df = df.drop(commercial_indices)
+    #property_types = df['property_type']
+    #commercial_property_types = ['Boutique hotel', 'Hostel', 'Hotel', 'Aparthotel']
+    #commercial_indices = []
+    #for index, value in property_types.iteritems():
+    #    if value in commercial_property_types:
+    #        commercial_indices.append(index)
+    #df = df.drop(commercial_indices)
 
-    # Delete special/unique listings (< 10 listings)
-    # special_property_types = ['Guesthouse', 'Villa', 'Hut', 'Tiny house', 'Casa particular (Cuba)', 'Earth house', 'Tipi', 'Bus', 'Castle', 'Cave', 'Farm stay', 'Resort', 'Cabin', 'Boat', 'Yurt']
-    # special_indices = []
-    # for index, value in property_types.iteritems():
-    #    if value in special_property_types:
-    #        special_indices.append(index)
-    # munich = munich.drop(special_indices)
-    # print(str(len(special_indices)), " special outliers deleted.")
+    #Delete special/unique listings (< 10 listings)
+    #special_property_types = ['Guesthouse', 'Villa', 'Hut', 'Tiny house', 'Casa particular (Cuba)', 'Earth house', 'Tipi', 'Bus', 'Castle', 'Cave', 'Farm stay', 'Resort', 'Cabin', 'Boat', 'Yurt']
+    #special_indices = []
+    #for index, value in property_types.iteritems():
+    #   if value in special_property_types:
+    #       special_indices.append(index)
+    #df = df.drop(special_indices)
     return df
 
 
@@ -88,6 +100,8 @@ def noise_identification(df):
     noise_indices = []
     for index, value in price.iteritems():
         if value > (price_mean + (3 * price_std)):
+            noise_indices.append(index)
+        if value < (price_mean - (3 * price_std)):
             noise_indices.append(index)
 
     # Delete noise
@@ -113,6 +127,10 @@ def feature_extraction(df):
         else:
             df.loc[index, 'max_price'] = row.price
             df.loc[index, 'max_people'] = row.accommodates + row.guests_included
+    df = df.drop('guests_included', 1)
+    df = df.drop('extra_people', 1)
+    df = df.drop('price', 1)
+
 
     # Calculate deviation from city center
     df = geodata(df)
@@ -121,6 +139,7 @@ def feature_extraction(df):
 
 # Preprocess the feature 'neighbourhood'
 def preprocess_neighbourhood(df):
+
     # Get list of distinct values of neighbourhoods
     neighbourhoods_selected = df.neighbourhood_cleansed.unique()
 
@@ -142,15 +161,15 @@ def preprocess_neighbourhood(df):
 def data_normalization(df):
     # encode property_type
     # Alternative 1: Label encoding of property type
-    # label_encoder = preprocessing.LabelEncoder()
+    label_encoder = preprocessing.LabelEncoder()
     # df['property_type'] = label_encoder.fit_transform(df['property_type'])
 
     # Alternative 2: Ordinal encoding of property type
-    ordinal_encoder = OrdinalEncoder()
-    order = ordinal_encoder.fit_transform(df[['property_type', 'max_price']].groupby('property_type').mean())
-    property_types = df['property_type'].unique()
-    for index, property_type in enumerate(property_types):
-        df.loc[df.property_type == property_type, 'property_type'] = order[index][0]
+    #ordinal_encoder = OrdinalEncoder()
+    #order = ordinal_encoder.fit_transform(df[['property_type', 'max_price']].groupby('property_type').mean())
+    #property_types = df['property_type'].unique()
+    #for index, property_type in enumerate(property_types):
+    #   df.loc[df.property_type == property_type, 'property_type'] = order[index][0]
 
     # encode room_type
     # Alternative 1: Label encoding of room type
@@ -164,6 +183,7 @@ def data_normalization(df):
     for index, room_type in enumerate(room_types):
         df.loc[df.room_type == room_type, 'room_type'] = order[index][0]
 
+    #df['neighbourhood_cleansed'] = label_encoder.fit_transform(df['neighbourhood_cleansed'])
 
     # encode bathrooms
     # create replace map
@@ -176,11 +196,17 @@ def data_normalization(df):
 
 def data_cleaning(df):
     # replace blank entries with shared bathroom
-    df.loc[df.bathrooms == None, 'bathrooms'] = 0.5
-    df.loc[df.bathrooms == 'NaN', 'bathrooms'] = 0.5
+    #df.loc[df.bathrooms == None, 'bathrooms'] = 0.5
+    df = df[~df['beds'].isnull()]
+    #df = df[~df['review_scores_rating'].isnull()]
+    #df = df[~df['bathrooms'].isnull()]
+    df = df[~df['bedrooms'].isnull()]
+    #df = df[~df['host_is_superhost'].isnull()]
+    #df = df[~df['host_has_profile_pic'].isnull()]
+    #df.loc[df.beds == "nan", 'beds'] = 0.5
 
     # replace zero bathrooms with shared bathroom
-    df.loc[df.bathrooms == 0.0, 'bathrooms'] = 0.5
+    #df.loc[df.bathrooms == 0.0, 'bathrooms'] = 0.5
     return df
 
 
@@ -195,8 +221,10 @@ def geodata(df):
     # compute distance to Marienplatz as a proxy for the city centre
     geo_df['distance_centre'] = geo_df.distance(Point(11.576006, 48.137079))
     df['distance_centre'] = geo_df['distance_centre']
+    df = df.drop('longitude', 1)
+    df = df.drop('latitude', 1)
 
     # discretise distance_centre
-    discretiser = preprocessing.KBinsDiscretizer(n_bins=10, encode='ordinal')
+    discretiser = preprocessing.KBinsDiscretizer(n_bins=5, encode='ordinal')
     df['distance_centre'] = discretiser.fit_transform(df['distance_centre'].values.reshape(-1, 1))
     return df
