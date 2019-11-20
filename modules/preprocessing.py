@@ -52,10 +52,12 @@ def preprocess_dataset(df):
     df = preprocess_bed_type(df)
     df = preprocess_bedrooms(df)
     df = preprocess_beds(df)
+    df = preprocess_cleaning_fee(df)
     df = preprocess_has_availability(df)
     df = preprocess_host_has_profile_pic(df)
     df = preprocess_host_identity_verified(df)
     df = preprocess_host_is_superhost(df)
+    df = preprocess_host_listings_count(df)
     df = preprocess_host_location(df)
     df = preprocess_instant_bookable(df)
     df = preprocess_neighbourhood_cleansed(df)
@@ -63,6 +65,7 @@ def preprocess_dataset(df):
     df = preprocess_require_guest_phone_verification(df)
     df = preprocess_require_guest_profile_picture(df)
     df = preprocess_room_type(df)
+    df = preprocess_security_deposit(df)
 
     # Generate additional features
     df = generate_distance_to_city_center(df)
@@ -126,6 +129,15 @@ def preprocess_beds(df):
     return df
 
 
+def preprocess_cleaning_fee(df):
+    # Convert 'cleaning_fee' to float & Delete leading dollar sign
+    df['cleaning_fee'] = df['cleaning_fee'].replace('[\$,)]', '', regex=True).astype(float)
+
+    # Replace blank entries with 0
+    df.loc[df.cleaning_fee.isna(), 'cleaning_fee'] = 0.0
+    return df
+
+
 def preprocess_extra_people(df):
     df['extra_people'] = df['extra_people'].replace('[\$,)]', '', regex=True).astype(float)
     return df
@@ -159,13 +171,33 @@ def preprocess_host_is_superhost(df):
     return df
 
 
-def preprocess_host_location(df):
+def preprocess_host_listings_count(df):
+    df.loc[df.host_total_listings_count.isna(), 'host_total_listings_count'] = 0.0
     return df
+
+
+def preprocess_host_location(df):
+    df['host_lives_in_munich'] = 0
+    df['host_location'] = df['host_location'].astype(str)  # some values are floats for some reason
+    munich_name = ['Munich', 'München']
+    for index, row in df.iterrows():
+        for element in munich_name:
+            if element in row.host_location:
+                df.loc[index, 'host_lives_in_munich'] = 1
+    df = df.drop(columns='host_location')
+    return df
+
 
 def preprocess_instant_bookable(df):
     df = df[~df['instant_bookable'].isnull()]
     label_encoder = preprocessing.LabelEncoder()
     df['instant_bookable'] = label_encoder.fit_transform(df['instant_bookable'])
+    return df
+
+
+def preprocess_is_location_exact(df):
+    df.loc[df.is_location_exact == 't', 'is_location_exact'] = 1.0
+    df.loc[df.is_location_exact == 'f', 'is_location_exact'] = 0.0
     return df
 
 
@@ -219,17 +251,16 @@ def preprocess_property_type(df):
             commercial_indices.append(index)
     df = df.drop(commercial_indices)
 
-
     # Alternative 1: Label encoding of property type
-    label_encoder = preprocessing.LabelEncoder()
-    df['property_type'] = label_encoder.fit_transform(df['property_type'])
+    # label_encoder = preprocessing.LabelEncoder()
+    # df['property_type'] = label_encoder.fit_transform(df['property_type'])
 
     # Alternative 2: Ordinal encoding of property type
-    #ordinal_encoder = OrdinalEncoder()
-    #order = ordinal_encoder.fit_transform(df[['property_type', 'maximum_price']].groupby('property_type').mean())
-    #property_types = df['property_type'].unique()
-    #for index, property_type in enumerate(property_types):
-    #   df.loc[df.property_type == property_type, 'property_type'] = order[index][0]
+    ordinal_encoder = OrdinalEncoder()
+    order = ordinal_encoder.fit_transform(df[['property_type', 'maximum_price']].groupby('property_type').mean())
+    property_types = df['property_type'].unique()
+    for index, property_type in enumerate(property_types):
+       df.loc[df.property_type == property_type, 'property_type'] = order[index][0]
     return df
 
 
@@ -248,15 +279,25 @@ def preprocess_require_guest_profile_picture(df):
 
 
 def preprocess_room_type(df):
-    label_encoder = preprocessing.LabelEncoder()
-    df['room_type'] = label_encoder.fit_transform(df['room_type'])
+    # Alternative 1: Label encoding of room type
+    # label_encoder = preprocessing.LabelEncoder()
+    # df['room_type'] = label_encoder.fit_transform(df['room_type'])
 
     # Alternative 2: Ordinal encoding of property type
-    #ordinal_encoder = OrdinalEncoder()
-    #order = ordinal_encoder.fit_transform(df[['room_type', 'maximum_price']].groupby('room_type').mean())
-    #room_types = df['room_type'].unique()
-    #for index, room_type in enumerate(room_types):
-    #    df.loc[df.room_type == room_type, 'room_type'] = order[index][0]
+    ordinal_encoder = OrdinalEncoder()
+    order = ordinal_encoder.fit_transform(df[['room_type', 'maximum_price']].groupby('room_type').mean())
+    room_types = df['room_type'].unique()
+    for index, room_type in enumerate(room_types):
+        df.loc[df.room_type == room_type, 'room_type'] = order[index][0]
+    return df
+
+
+def preprocess_security_deposit(df):
+    # Convert 'security_deposit' to float & Delete leading dollar sign
+    df['security_deposit'] = df['security_deposit'].replace('[\$,)]', '', regex=True).astype(float)
+
+    # Replace blank entries with 0
+    df.loc[df.security_deposit.isna(), 'security_deposit'] = 0.0
     return df
 
 
