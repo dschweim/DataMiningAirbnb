@@ -32,12 +32,26 @@
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
+<<<<<<< HEAD
       <changelist id="88fd9cfa-065b-4df8-a6b2-ea761ace7df9" name="Default Changelist" comment="" />
       <created>1573720647192</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1573720647192</updated>
       <workItem from="1573720663674" duration="520000" />
+=======
+      <changelist id="a2f178f9-4981-41f0-988b-2798eaf1e8b9" name="Default Changelist" comment="" />
+      <created>1573678826100</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+<<<<<<< Updated upstream
+      <updated>1573678826100</updated>
+      <workItem from="1573678844928" duration="7810000" />
+=======
+      <updated>1573720647192</updated>
+      <workItem from="1573720663674" duration="598000" />
+>>>>>>> Stashed changes
+>>>>>>> jannik
     </task>
     <servers />
   </component>
@@ -55,4 +69,10 @@
       </map>
     </option>
   </component>
+<<<<<<< HEAD
+=======
+  <component name="com.intellij.coverage.CoverageDataManagerImpl">
+    <SUITE FILE_PATH="coverage/data_mining_airbnb$imports.coverage" NAME="imports Coverage Results" MODIFIED="1573679131890" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/modules" />
+  </component>
+>>>>>>> jannik
 </project>
