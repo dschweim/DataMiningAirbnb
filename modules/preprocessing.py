@@ -59,6 +59,7 @@ def preprocess_dataset(df):
     df = preprocess_host_is_superhost(df)
     df = preprocess_host_listings_count(df)
     df = preprocess_host_location(df)
+    df = preprocess_host_verifications(df)
     df = preprocess_instant_bookable(df)
     df = preprocess_neighbourhood_cleansed(df)
     df = preprocess_property_type(df)
@@ -185,6 +186,10 @@ def preprocess_host_location(df):
             if element in row.host_location:
                 df.loc[index, 'host_lives_in_munich'] = 1
     df = df.drop(columns='host_location')
+    return df
+
+
+def preprocess_host_verifications(df):
     return df
 
 
