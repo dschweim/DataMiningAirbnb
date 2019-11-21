@@ -10,6 +10,8 @@ from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 from sklearn.preprocessing import OrdinalEncoder
 from collections import Counter
+from sklearn.feature_selection import f_regression
+from sklearn.feature_selection import SelectKBest, SelectFwe
 
 
 # Preprocess the dataset
@@ -106,6 +108,18 @@ def select_best_features(df, number_of_features):
     return df[best_features]
 
 
+def select_best_features_f(features_train, target_train, critical_p_value):
+    # run the F-Test
+    f, pval = f_regression(features_train, target_train)
+    # prepare a dataframe to inspect the results
+    stat = pd.DataFrame({'feature': features_train.columns, 'F value': f, 'p_value': pval})
+    stat['p_value'] = round(stat['p_value'], 4)
+    stat = stat.sort_values("p_value", ascending=False)
+    print(stat)
+    best = stat[stat.p_value < critical_p_value]['feature']
+    return best
+
+
 # Preprocess the features in the dataset
 def preprocess_amenities(df):
     # Create list of all individual amenities
@@ -160,7 +174,7 @@ def preprocess_beds(df):
 
 
 def preprocess_cancellation_policy(df):
-    df['cancellation_policy'] = 4
+    df.loc[df.cancellation_policy == 'super_strict_60', 'cancellation_policy'] = 4
     df.loc[df.cancellation_policy == 'strict_14_with_grace_period', 'cancellation_policy'] = 3
     df.loc[df.cancellation_policy == 'strict', 'cancellation_policy'] = 2
     df.loc[df.cancellation_policy == 'moderate', 'cancellation_policy'] = 1
@@ -259,14 +273,14 @@ def preprocess_maximum_nights(df):
 
 
 def preprocess_minimum_nights(df):
+    # Create bin for short-term bookings
+    df.loc[df.minimum_nights <= 3, 'minimum_nights'] = 0
+
     # Create bin for long-term bookings
-    df['minimum _nights'] = 2
+    df.loc[((df.minimum_nights > 3) & (df.minimum_nights <= 15)), 'minimum_nights'] = 1
 
     # Create bin for holiday bookings
-    df.loc[df.minimum_nights < 15, 'minimum_nights'] = 1
-
-    # Create bin for short-term bookings
-    df.loc[df.minimum_nights < 3, 'minimum_nights'] = 0
+    df.loc[df.minimum_nights > 15, 'minimum_nights'] = 2
     return df
 
 
@@ -355,10 +369,8 @@ def generate_maximum_listing_price(df):
     for index, row in df.iterrows():
         if row.guests_included < row.accommodates:
             df.loc[index, 'maximum_price'] = row.price + (row.accommodates - row.guests_included) * row.extra_people
-            df.loc[index, 'maximum_people'] = row.accommodates - row.guests_included
         else:
             df.loc[index, 'maximum_price'] = row.price
-            df.loc[index, 'maximum_people'] = row.accommodates + row.guests_included
     return df
 
 
