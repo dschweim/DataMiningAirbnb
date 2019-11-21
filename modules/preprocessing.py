@@ -271,8 +271,21 @@ def preprocess_minimum_nights(df):
 
 
 def preprocess_neighbourhood_cleansed(df):
-    label_encoder = preprocessing.LabelEncoder()
-    df['neighbourhood_cleansed'] = label_encoder.fit_transform(df['neighbourhood_cleansed'])
+    # Get list of distinct values of neighbourhoods
+    neighbourhoods_selected = df.neighbourhood_cleansed.unique()
+
+    # Create dummy variables for the neighbourhoods
+    for element in neighbourhoods_selected:
+        df[element.lower()] = 0
+
+    # Set relevant values equal to 1
+    for row in df.itertuples():
+        for element in neighbourhoods_selected:
+            if element == row.neighbourhood_cleansed:
+                df.loc[row.Index, element.lower()] = 1
+
+    # Delete initial column neighbourhood_cleansed
+    df = df.drop(columns='neighbourhood_cleansed')
     return df
 
 
