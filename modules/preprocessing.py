@@ -41,7 +41,7 @@ def load_dataset():
 
 def feature_selection(df):
     selected_features = ['accommodates', 'amenities', 'bathrooms', 'bed_type', 'bedrooms', 'beds',
-                         'calculated_host_listings_count', 'cancellation_policy', 'cleaning_fee', 'extra_people',
+                         'cancellation_policy', 'cleaning_fee', 'extra_people',
                          'guests_included', 'host_has_profile_pic', 'host_identity_verified',
                          'host_is_superhost', 'host_location', 'host_total_listings_count',
                          'host_verifications', 'instant_bookable', 'is_location_exact', 'latitude', 'longitude',
