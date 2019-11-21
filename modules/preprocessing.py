@@ -286,7 +286,7 @@ def preprocess_price(df):
     # Calculate the maximum price for all listings
     df = generate_maximum_listing_price(df)
     # Drop the features 'price' because of new feature 'maximum_price'
-    df = df.drop(['price'], 1)
+    df = df.drop(['price', 'guests_included', 'extra_people'], 1)
     return df
 
 
