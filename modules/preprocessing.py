@@ -287,24 +287,7 @@ def preprocess_price(df):
 
     # Calculate the maximum price for all listings
     df = generate_maximum_listing_price(df)
-
-    # Calculate mean and standard deviation
-    price = df['maximum_price']
-    price_mean = np.mean(price)
-    price_std = np.std(price)
-
-    # Detect noise and store their indices
-    noise_indices = []
-    for index, value in price.iteritems():
-        if value > (price_mean + (3 * price_std)):
-            noise_indices.append(index)
-        if value < (price_mean - (3 * price_std)):
-            noise_indices.append(index)
-
-    # Delete noise
-    df = df.drop(noise_indices)
-
-    # Drop the features 'price'
+    # Drop the features 'price' because of new feature 'maximum_price'
     df = df.drop(['price'], 1)
     return df
 
@@ -400,3 +383,21 @@ def generate_distance_to_city_center(df):
     df['distance_centre'] = discretiser.fit_transform(df['distance_centre'].values.reshape(-1, 1))
     return df
 
+
+def delete_price_outliers(df_x, df_y):
+    # Calculate mean and standard deviation
+    price_mean = np.mean(df_y)
+    price_std = np.std(df_y)
+
+    # Detect noise and store their indices
+    noise_indices = []
+    for index, value in df_y.iteritems():
+        if value > (price_mean + (3 * price_std)):
+            noise_indices.append(index)
+        if value < (price_mean - (3 * price_std)):
+            noise_indices.append(index)
+
+    # Delete noise
+    df_y = df_y.drop(noise_indices)
+    df_x = df_x.drop(noise_indices)
+    return df_x, df_y
