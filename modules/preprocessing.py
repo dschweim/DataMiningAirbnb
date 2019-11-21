@@ -150,14 +150,12 @@ def preprocess_bed_type(df):
 
 
 def preprocess_bedrooms(df):
-    df = df[~df['bedrooms'].isnull()]
-    df.loc[df.bedrooms == 0.0, 'bedrooms'] = 1.0
+    df.loc[df.bedrooms.isna(), 'bedrooms'] = 0.0
     return df
 
 
 def preprocess_beds(df):
-    df = df[~df['beds'].isnull()]
-    df.loc[df.beds == "nan", 'beds'] = 0.5
+    df.loc[df.beds.isna(), 'beds'] = 0.0
     return df
 
 
