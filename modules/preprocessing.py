@@ -85,6 +85,7 @@ def preprocess_dataset(df):
 
     # Generate additional features
     df = generate_distance_to_city_center(df)
+    df = generate_average_rent(df)
     return df
 
 
@@ -298,8 +299,6 @@ def preprocess_neighbourhood_cleansed(df):
             if element == row.neighbourhood_cleansed:
                 df.loc[row.Index, element.lower()] = 1
 
-    # Delete initial column neighbourhood_cleansed
-    df = df.drop(columns='neighbourhood_cleansed')
     return df
 
 
@@ -406,6 +405,19 @@ def generate_distance_to_city_center(df):
     df['distance_centre'] = discretiser.fit_transform(df['distance_centre'].values.reshape(-1, 1))
     return df
 
+
+def generate_average_rent(df):
+    rent_df = pd.read_csv('data/rent_index_Munich.csv')
+    df['average_rent_neighbourhood'] = 0
+    for index, row in df.iterrows():
+        for r_index, r_row in rent_df.iterrows():
+            if row.neighbourhood_cleansed == r_row.neighbourhood:
+                df.loc[index, 'average_rent_neighbourhood'] = r_row.average_rent_euro * 1.1
+
+    # Delete initial column neighbourhood_cleansed
+    df = df.drop(columns='neighbourhood_cleansed')
+
+    return df
 
 def delete_price_outliers(df_x, df_y):
     # Calculate mean and standard deviation
