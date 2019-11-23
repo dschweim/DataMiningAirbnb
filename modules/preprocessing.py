@@ -12,6 +12,7 @@ from sklearn.preprocessing import OrdinalEncoder
 from collections import Counter
 from sklearn.feature_selection import f_regression
 from sklearn.feature_selection import SelectKBest, SelectFwe
+from sklearn.model_selection import train_test_split
 
 
 # Preprocess the dataset
@@ -32,8 +33,12 @@ def load_and_preprocess_dataset():
     preprocessed_df = preprocessed_df.reset_index()
     preprocessed_df = preprocessed_df.drop('index', 1)
 
+    # Split features and label
+    features = preprocessed_df.drop(columns='maximum_price')
+    label = preprocessed_df['maximum_price']
+
     print(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), ": Dataset loaded and preprocessed.")
-    return preprocessed_df
+    return features, label
 
 
 def load_dataset():
@@ -90,11 +95,7 @@ def preprocess_dataset(df):
 
 
 # Select the features with the highest correlation
-def select_best_features(df, number_of_features):
-    # Split features and labels
-    features = df.drop('maximum_price', 1)
-    label = df['maximum_price']
-
+def select_best_features(features, label, number_of_features):
     # Select k best features using SelectKBest (k = 5)
     best_features = SelectKBest(score_func=chi2, k=number_of_features)
     fit = best_features.fit(features, label)
@@ -106,19 +107,20 @@ def select_best_features(df, number_of_features):
     featureScores.columns = ['Specs', 'Score']
     best_features = featureScores.nlargest(number_of_features, 'Score')['Specs']
     print("Selected Features: ", best_features)
-    return df[best_features]
+    return features[best_features]
 
 
-def select_best_features_f(features_train, target_train, critical_p_value):
-    # run the F-Test
-    f, pval = f_regression(features_train, target_train)
-    # prepare a dataframe to inspect the results
-    stat = pd.DataFrame({'feature': features_train.columns, 'F value': f, 'p_value': pval})
-    stat['p_value'] = round(stat['p_value'], 4)
-    stat = stat.sort_values("p_value", ascending=False)
-    print(stat)
-    best = stat[stat.p_value < critical_p_value]['feature']
-    return best
+def select_best_features_f(features, label, number_of_features):
+    f_value, p_value = f_regression(features, label)
+    stat = pd.DataFrame({'feature': features.columns, 'f_value': f_value})
+    stat = stat.sort_values('f_value', ascending=False)
+    best_features = stat.head(number_of_features)['feature']
+    return features[best_features]
+
+
+def stratified_train_test_split(features, label):
+    bins = pd.qcut(label, 30, labels=False)
+    x_train, x_test, y_train, y_test = train_test_split(features, label, test_size=0.2, random_state=42, stratify=bins)
 
 
 # Preprocess the features in the dataset
