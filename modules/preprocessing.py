@@ -419,6 +419,7 @@ def generate_average_rent(df):
 
     return df
 
+
 def delete_price_outliers(df_x, df_y):
     # Calculate mean and standard deviation
     price_mean = np.mean(df_y)
