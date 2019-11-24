@@ -109,16 +109,12 @@ def select_best_features(df, number_of_features):
     return df[best_features]
 
 
-def select_best_features_f(features_train, target_train, critical_p_value):
-    # run the F-Test
-    f, pval = f_regression(features_train, target_train)
-    # prepare a dataframe to inspect the results
-    stat = pd.DataFrame({'feature': features_train.columns, 'F value': f, 'p_value': pval})
-    stat['p_value'] = round(stat['p_value'], 4)
-    stat = stat.sort_values("p_value", ascending=False)
-    print(stat)
-    best = stat[stat.p_value < critical_p_value]['feature']
-    return best
+def select_best_features_f(features, label, number_of_features):
+    f_value, p_value = f_regression(features, label)
+    stat = pd.DataFrame({'feature': features.columns, 'f_value': f_value})
+    stat = stat.sort_values('f_value', ascending=False)
+    best_features = stat.head(number_of_features)['feature']
+    return features[best_features]
 
 
 # Preprocess the features in the dataset
