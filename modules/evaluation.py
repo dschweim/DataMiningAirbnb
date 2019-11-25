@@ -1,9 +1,17 @@
 import itertools
 from math import sqrt
 
+from sklearn.dummy import DummyRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
+
+
+def baseline_prediction(x_train, x_test, y_train, y_test):
+    dummy_mean = DummyRegressor(strategy='mean')
+    dummy_mean.fit(x_train, y_train)
+    predictions = dummy_mean.predict(x_test)
+    print("Performance of Baseline Prediction (Mean) :", str(sqrt(mean_squared_error(y_test, predictions))))
 
 
 def calculate_mean_absolute_error(y_actual, y_predicted):
