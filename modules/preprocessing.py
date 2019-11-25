@@ -79,7 +79,6 @@ def preprocess_dataset(df):
     df = preprocess_host_verifications(df)
     df = preprocess_instant_bookable(df)
     df = preprocess_is_location_exact(df)
-    df = preprocess_maximum_nights(df)
     df = preprocess_minimum_nights(df)
     df = preprocess_neighbourhood_cleansed(df)
     df = preprocess_property_type(df)
@@ -157,9 +156,7 @@ def preprocess_amenities(df):
 
 
 def preprocess_bathrooms(df):
-    df = df[~df['bathrooms'].isnull()]
-    df.loc[df.bathrooms == None, 'bathrooms'] = 0.5
-    df.loc[df.bathrooms == 0.0, 'bathrooms'] = 0.5
+    df.loc[df['bathrooms'].isnull(), 'bathrooms'] = 0.0
     return df
 
 
@@ -175,7 +172,8 @@ def preprocess_bedrooms(df):
 
 
 def preprocess_beds(df):
-    df.loc[df.beds.isna(), 'beds'] = 0.0
+    df.loc[df.beds.isna(), 'beds'] = 1.0
+    df.loc[df.beds == 0.0, 'beds'] = 1.0
     return df
 
 
@@ -224,7 +222,7 @@ def preprocess_host_is_superhost(df):
 
 
 def preprocess_host_listings_count(df):
-    df.loc[df.host_total_listings_count.isna(), 'host_total_listings_count'] = 0.0
+    df.loc[df.host_total_listings_count.isna(), 'host_total_listings_count'] = 1.0
     return df
 
 
@@ -271,10 +269,6 @@ def preprocess_instant_bookable(df):
 def preprocess_is_location_exact(df):
     df.loc[df.is_location_exact == 't', 'is_location_exact'] = 1.0
     df.loc[df.is_location_exact == 'f', 'is_location_exact'] = 0.0
-    return df
-
-
-def preprocess_maximum_nights(df):
     return df
 
 
@@ -345,14 +339,14 @@ def preprocess_property_type(df):
 
 
 def preprocess_require_guest_phone_verification(df):
-    df = df[~df['require_guest_phone_verification'].isnull()]
+    df.loc[df.require_guest_phone_verification.isna(), 'require_guest_phone_verification'] = 'f'
     label_encoder = preprocessing.LabelEncoder()
     df['require_guest_phone_verification'] = label_encoder.fit_transform(df['require_guest_phone_verification'])
     return df
 
 
 def preprocess_require_guest_profile_picture(df):
-    df = df[~df['require_guest_profile_picture'].isnull()]
+    df.loc[df.require_guest_profile_picture.isna(), 'require_guest_profile_picture'] = 'f'
     label_encoder = preprocessing.LabelEncoder()
     df['require_guest_profile_picture'] = label_encoder.fit_transform(df['require_guest_profile_picture'])
     return df
