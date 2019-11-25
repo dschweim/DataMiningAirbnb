@@ -403,8 +403,8 @@ def generate_distance_to_city_center(df):
     df = df.drop('latitude', 1)
 
     # discretise distance_centre
-    discretiser = preprocessing.KBinsDiscretizer(n_bins=5, encode='ordinal')
-    df['distance_centre'] = discretiser.fit_transform(df['distance_centre'].values.reshape(-1, 1))
+    #discretiser = preprocessing.KBinsDiscretizer(n_bins=5, encode='ordinal')
+    #df['distance_centre'] = discretiser.fit_transform(df['distance_centre'].values.reshape(-1, 1))
     return df
 
 
