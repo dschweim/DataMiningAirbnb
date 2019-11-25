@@ -122,7 +122,7 @@ def select_best_features_f(features, label, number_of_features):
 
 def stratified_train_test_split(features, label):
     bins = pd.qcut(label, 30, labels=False)
-    return train_test_split(features, label, test_size=0.2, random_state=42, stratify=bins)
+    return train_test_split(features, label, test_size=0.2, random_state=1, stratify=bins)
 
 
 # Preprocess the features in the dataset
