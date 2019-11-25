@@ -12,6 +12,7 @@ from sklearn.preprocessing import OrdinalEncoder
 from collections import Counter
 from sklearn.feature_selection import f_regression
 from sklearn.feature_selection import SelectKBest, SelectFwe
+from sklearn.model_selection import train_test_split
 
 
 # Preprocess the dataset
@@ -32,8 +33,12 @@ def load_and_preprocess_dataset():
     preprocessed_df = preprocessed_df.reset_index()
     preprocessed_df = preprocessed_df.drop('index', 1)
 
+    # Split features and label
+    features = preprocessed_df.drop(columns='maximum_price')
+    label = preprocessed_df['maximum_price']
+
     print(str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), ": Dataset loaded and preprocessed.")
-    return preprocessed_df
+    return features, label
 
 
 def load_dataset():
@@ -88,7 +93,6 @@ def preprocess_dataset(df):
     df = generate_average_rent(df)
     return df
 
-
 # Select the features with the highest correlation
 def select_best_features(df, number_of_features):
     # Split features and labels
@@ -115,6 +119,11 @@ def select_best_features_f(features, label, number_of_features):
     stat = stat.sort_values('f_value', ascending=False)
     best_features = stat.head(number_of_features)['feature']
     return features[best_features]
+
+
+def stratified_train_test_split(features, label):
+    bins = pd.qcut(label, 30, labels=False)
+    return train_test_split(features, label, test_size=0.2, random_state=42, stratify=bins)
 
 
 # Preprocess the features in the dataset

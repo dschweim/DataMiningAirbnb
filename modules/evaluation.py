@@ -11,7 +11,9 @@ def baseline_prediction(x_train, x_test, y_train, y_test):
     dummy_mean = DummyRegressor(strategy='mean')
     dummy_mean.fit(x_train, y_train)
     predictions = dummy_mean.predict(x_test)
+    r_squared = dummy_mean.score(x_test, y_test)
     print("Performance of Baseline Prediction (Mean) :", str(sqrt(mean_squared_error(y_test, predictions))))
+    print(round(r_squared, 2))
 
 
 def calculate_mean_absolute_error(y_actual, y_predicted):
@@ -29,11 +31,11 @@ def calculate_r_squared(y_actual, y_predicted):
     return r_squared
 
 
-def generate_feature_combinations(df):
+def generate_feature_combinations(x):
     feature_combinations = []
-    for index, column in enumerate(df.columns, start=1):
+    for index, column in enumerate(x.columns, start=1):
         if index > 0:
-            combinations = itertools.combinations(df.columns, index)
+            combinations = itertools.combinations(x.columns, index)
             for combination in combinations:
                 tmp = []
                 for i in range(0, index):
