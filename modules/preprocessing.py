@@ -1,4 +1,5 @@
 import warnings
+from collections import Counter
 from datetime import datetime
 
 import geopandas as gpd
@@ -8,11 +9,9 @@ from shapely.geometry import Point
 from sklearn import preprocessing
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
-from sklearn.preprocessing import OrdinalEncoder
-from collections import Counter
 from sklearn.feature_selection import f_regression
-from sklearn.feature_selection import SelectKBest, SelectFwe
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OrdinalEncoder
 
 
 # Preprocess the dataset
@@ -122,7 +121,7 @@ def select_best_features_f(features, label, number_of_features):
 
 def stratified_train_test_split(features, label):
     bins = pd.qcut(label, 30, labels=False)
-    return train_test_split(features, label, test_size=0.2, random_state=42, stratify=bins)
+    return train_test_split(features, label, test_size=0.2, random_state=1, stratify=bins)
 
 
 # Preprocess the features in the dataset

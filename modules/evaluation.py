@@ -12,8 +12,8 @@ def baseline_prediction(x_train, x_test, y_train, y_test):
     dummy_mean.fit(x_train, y_train)
     predictions = dummy_mean.predict(x_test)
     r_squared = dummy_mean.score(x_test, y_test)
-    print("Performance of Baseline Prediction (Mean) :", str(sqrt(mean_squared_error(y_test, predictions))))
-    print(round(r_squared, 2))
+    print("Root Mean Squared Error :", str(round(sqrt(mean_squared_error(y_test, predictions)), 2)))
+    print("R2 :", str(round(r_squared, 4)))
 
 
 def calculate_mean_absolute_error(y_actual, y_predicted):
