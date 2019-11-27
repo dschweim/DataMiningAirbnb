@@ -201,7 +201,7 @@ def preprocess_extra_people(df):
 
 
 def preprocess_host_has_profile_pic(df):
-    df = df[~df['host_has_profile_pic'].isnull()]
+    df.loc[df.host_has_profile_pic.isna(), 'host_has_profile_pic'] = 'f'
     label_encoder = preprocessing.LabelEncoder()
     df['host_has_profile_pic'] = label_encoder.fit_transform(df['host_has_profile_pic'])
     return df
